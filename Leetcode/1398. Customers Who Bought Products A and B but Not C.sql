@@ -7,3 +7,18 @@ WHERE product_name = 'A'
     (SELECT customer_id FROM Orders WHERE product_name = 'B')
   AND o.customer_id NOT IN
     (SELECT customer_id FROM Orders WHERE product_name = 'C')
+    
+    
+    
+SELECT c.customer_id,
+       c.customer_name
+FROM Orders o
+LEFT JOIN Customers c ON o.customer_id = c.customer_id
+GROUP BY c.customer_id,
+         c.customer_name
+HAVING sum(CASE WHEN product_name = 'A' THEN 1 ELSE 0
+           END) * sum(CASE WHEN product_name = 'B' THEN 1 ELSE 0
+                      END) > 0
+AND sum(CASE WHEN product_name = 'C' THEN 1 ELSE 0
+        END) = 0
+ORDER BY c.customer_id
