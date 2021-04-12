@@ -27,3 +27,20 @@ FROM
             t.team_name) t1
 ORDER BY num_points DESC,
          team_id
+
+
+----------------------------------------------------------
+SELECT *
+FROM
+  (SELECT t.team_id,
+          t.team_name,
+          sum(CASE WHEN m.host_goals = m.guest_goals THEN 1
+                   WHEN m.host_team = t.team_id AND m.host_goals > m.guest_goals THEN 3
+                   WHEN m.guest_team = t.team_id AND m.host_goals < m.guest_goals THEN 3
+                   ELSE 0
+              END) AS num_points
+   FROM Teams t
+   LEFT JOIN Matches m ON t.team_id = m.host_team
+   OR t.team_id = m.guest_team
+   GROUP BY t.team_id, t.team_name) tbl1
+ORDER BY num_points DESC, team_id

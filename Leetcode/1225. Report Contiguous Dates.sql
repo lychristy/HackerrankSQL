@@ -1,32 +1,18 @@
-SELECT*
+SELECT status AS period_state,
+       min(date) AS start_date,
+       max(date) AS end_date
 FROM
-  (SELECT 'failed' AS period_state,
-          min(fail_date) AS start_date,
-          max(fail_date) AS end_date
+  (SELECT *,
+          sum(number) OVER (PARTITION BY status ORDER BY date) AS sum_number
    FROM
-     (SELECT fail_date,
-             rn1 - rn2 AS diff
+     (SELECT *,
+             CASE WHEN datediff(DAY, lag(date, 1) OVER (PARTITION BY status ORDER BY date),date) = 1 THEN 0 
+                  ELSE 1 END AS number
       FROM
-        (SELECT *,
-                datediff(DAY, min(fail_date) OVER (ORDER BY fail_date), fail_date) AS rn1,
-                row_number() OVER ORDER BY fail_date) - 1 AS rn2
+        (SELECT fail_date AS date, 'failed' AS status
          FROM Failed
-         WHERE format(fail_date, 'yyyy') = 2019) t1) t2
-   GROUP BY diff) t3
-UNION ALL
-SELECT*
-FROM
-  (SELECT 'succeeded' AS period_state,
-          min(success_date) AS start_date,
-          max(success_date) AS end_start
-   FROM
-     (SELECT success_date,
-             rn1 - rn2 AS diff
-      FROM
-        (SELECT *,
-                datediff(DAY, min(success_date) OVER (ORDER BY success_date), success_date) AS rn1,
-                row_number() OVER (ORDER BY success_date) - 1 AS rn2
-         FROM Succeeded
-         WHERE format(success_date, 'yyyy') = 2019) t1) t2
-   GROUP BY diff) t4
-ORDER BY start_date
+         UNION ALL SELECT success_date AS date, 'succeeded' AS status
+         FROM Succeeded) tbl1
+      WHERE datepart(YEAR, date) = 2019) tbl2) tbl3
+GROUP BY status, sum_number
+ORDER BY min(date)
