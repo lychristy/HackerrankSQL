@@ -1,33 +1,7 @@
-SELECT cast(round(sum(TIV_2016), 2) AS numeric(36, 2)) AS TIV_2016
-FROM insurance i
-LEFT JOIN
-  (SELECT LAT,
-          LON
-   FROM insurance
-   GROUP BY LAT,
-            LON
-   HAVING count(*) = 1) t1 ON i.LAT = t1.LAT
-AND i.LON = t1.LON
-WHERE TIV_2015 IN
-    (SELECT TIV_2015
-     FROM insurance
-     GROUP BY TIV_2015
-     HAVING count(*) > 1)
-  AND t1.LAT IS NOT NULL
-  
-  
-  
-  
-SELECT cast(round(sum(TIV_2016), 2) AS numeric(36, 2)) AS TIV_2016
-FROM insurance
-WHERE TIV_2015 IN
-    (SELECT TIV_2015
-     FROM insurance
-     GROUP BY TIV_2015
-     HAVING count(*) > 1)
-  AND concat(LAT, LON)IN
-    (SELECT concat(LAT, LON)
-     FROM insurance
-     GROUP BY LAT,
-              LON
-     HAVING count(*) = 1)
+SELECT sum(TIV_2016) AS TIV_2016
+FROM
+  (SELECT *,
+          count(*) OVER (PARTITION BY TIV_2015) AS same_values_2015,
+          count(*) OVER (PARTITION BY LAT, LON) AS same_city
+   FROM insurance) tbl1
+WHERE same_values_2015 > 1 AND same_city = 1
